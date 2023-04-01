@@ -1,0 +1,71 @@
+#include <ThingSpeak.h>               // add librery
+#include <ESP8266WiFi.h>
+#include<Servo.h>
+WiFiClient  client;
+unsigned long counterChannelNumber = 1836177;                // Channel ID
+const char * myCounterReadAPIKey = "T0I3VM29NT2F1B4K";      // Read API Key
+const int FieldNumber1 = 1;                                 // The field you wish to read
+uint8_t LEDpin = D1;
+String presentValue = " ";
+String changeValue = " ";
+const int buzzer =  D3;
+Servo servo;
+
+void setup()
+{
+  servo.attach(2);
+  pinMode(LEDpin, OUTPUT);
+  digitalWrite(LEDpin , LOW);
+  Serial.begin(115200);
+  Serial.println();
+
+  WiFi.begin("Shrey", "12345678");                 // write wifi name & password
+
+  Serial.print("Connecting");
+   pinMode(buzzer, OUTPUT);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("Connected, IP address: ");
+  Serial.println(WiFi.localIP());
+  ThingSpeak.begin(client);
+}
+
+void loop()
+{
+  String A = ThingSpeak.readStringField(counterChannelNumber, FieldNumber1, myCounterReadAPIKey);
+  presentValue = A;
+  if (presentValue != changeValue)
+  {
+    Serial.println(A);
+    changeValue = presentValue;
+    if(A == "01234")                   // Password DOOR UNLOCK
+    { 
+      servo.write(180);
+      delay(1000);
+
+      digitalWrite(LEDpin , HIGH);
+      Serial.print("door unlocked ");
+    }
+    else if(A=="04321")                //DOOR LOCK
+    {
+      servo.write(0);
+      delay(1000);
+
+      digitalWrite(LEDpin , LOW);
+      Serial.print("door LOCKED ");
+      
+      }
+    else
+    {
+      digitalWrite(LEDpin , LOW);
+    Serial.print("WRONNG PASS ");
+     digitalWrite(buzzer, HIGH);
+  delay(800);
+  digitalWrite(buzzer, LOW);  
+    }
+  }
+}
